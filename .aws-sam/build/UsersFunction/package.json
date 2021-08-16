@@ -1,0 +1,12 @@
+{
+    "name": "foodsta-sam-template",
+    "description": "Sam template describing and deploying backend resources for foodsta application",
+    "version": "0.0.1",
+    "private": true,
+    "devDependencies": {
+        "jest": "^26.6.3"
+    },
+    "scripts": {
+        "test": "jest"
+    }
+}

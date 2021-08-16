@@ -1,0 +1,313 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: foodsta-sam
+Transform:
+- AWS::Serverless-2016-10-31
+Parameters:
+  VersionParam:
+    Type: String
+    Default: v1
+  StageNameParam:
+    Type: String
+    Default: prod
+Resources:
+  helloFromLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/hello-from-lambda.helloFromLambdaHandler
+      Runtime: nodejs14.x
+      MemorySize: 128
+      Timeout: 100
+      Description: A Lambda function that returns a static string.
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      CodeUri: helloFromLambdaFunction
+  FoodstaUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      UserPoolName: Foodsta-usrs
+      UsernameAttributes:
+      - email
+      AutoVerifiedAttributes:
+      - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 6
+          RequireLowercase: true
+          RequireNumbers: false
+          RequireSymbols: false
+          RequireUppercase: true
+  FoodstaUserPoolTokenClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId:
+        Ref: FoodstaUserPool
+      GenerateSecret: false
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+      - code
+      - implicit
+      CallbackURLs:
+      - http://localhost:19002
+      - https://localhost
+      SupportedIdentityProviders:
+      - COGNITO
+      AllowedOAuthScopes:
+      - phone
+      - email
+      - openid
+      ExplicitAuthFlows:
+      - USER_PASSWORD_AUTH
+  FoodstaPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      UserPoolName: Foodsta-users
+      AliasAttributes:
+      - preferred_username
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 6
+          RequireLowercase: true
+          RequireNumbers: false
+          RequireSymbols: false
+          RequireUppercase: true
+  FoodstaPoolTokenClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId:
+        Ref: FoodstaPool
+      GenerateSecret: false
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+      - code
+      - implicit
+      CallbackURLs:
+      - http://localhost:19002
+      - https://localhost
+      SupportedIdentityProviders:
+      - COGNITO
+      AllowedOAuthScopes:
+      - phone
+      - email
+      - openid
+      ExplicitAuthFlows:
+      - ALLOW_USER_PASSWORD_AUTH
+      - ALLOW_REFRESH_TOKEN_AUTH
+      - ALLOW_ADMIN_USER_PASSWORD_AUTH
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Foodsta-users
+      KeySchema:
+      - AttributeName: cognito-username
+        KeyType: HASH
+      - AttributeName: id
+        KeyType: RANGE
+      AttributeDefinitions:
+      - AttributeName: cognito-username
+        AttributeType: S
+      - AttributeName: id
+        AttributeType: S
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+  RecipeInformation:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Foodsta-recipeInformation
+      KeySchema:
+      - AttributeName: id
+        KeyType: HASH
+      AttributeDefinitions:
+      - AttributeName: id
+        AttributeType: S
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+  PostsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Foodsta-posts
+      KeySchema:
+      - AttributeName: cognito-username
+        KeyType: HASH
+      - AttributeName: id
+        KeyType: RANGE
+      AttributeDefinitions:
+      - AttributeName: cognito-username
+        AttributeType: S
+      - AttributeName: id
+        AttributeType: S
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+  CommentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Foodsta-commentsTable
+      KeySchema:
+      - AttributeName: cognito-username
+        KeyType: HASH
+      - AttributeName: commentId
+        KeyType: RANGE
+      AttributeDefinitions:
+      - AttributeName: cognito-username
+        AttributeType: S
+      - AttributeName: commentId
+        AttributeType: S
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+  RecipesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs14.x
+      CodeUri: RecipesFunction
+      Description: A simple function for UI to interact with recipe table.
+      MemorySize: 128
+      Timeout: 100
+      Policies:
+      - AmazonDynamoDBFullAccess
+      - CloudWatchFullAccess
+      - AWSLambdaBasicExecutionRole
+      Environment:
+        Variables:
+          TABLE_NAME: Recipes
+      Events:
+        GetRecipe:
+          Type: Api
+          Properties:
+            Path: /recipes/{recipeId}
+            Method: get
+        GetRecipes:
+          Type: Api
+          Properties:
+            Path: /recipes/getAll
+            Method: get
+        GetRecipeByCuisine:
+          Type: Api
+          Properties:
+            Path: /recipes/cuisine/{cuisine}
+            Method: get
+        GetRecipeInformation:
+          Type: Api
+          Properties:
+            Path: /recipes/{recipeId}/information
+            Method: get
+        SaveRecipe:
+          Type: Api
+          Properties:
+            Path: /recipes/save
+            Method: post
+  PostsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs14.x
+      CodeUri: PostsFunction
+      Description: A simple function for UI to interact with recipe table.
+      MemorySize: 128
+      Timeout: 100
+      Policies:
+      - AmazonDynamoDBFullAccess
+      - CloudWatchFullAccess
+      - AWSLambdaBasicExecutionRole
+      - AmazonS3FullAccess
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: PostsTable
+      Events:
+        GetPost:
+          Type: Api
+          Properties:
+            Path: /posts/{username}
+            Method: get
+        GetPosts:
+          Type: Api
+          Properties:
+            Path: /posts/getAll
+            Method: get
+        CreatePost:
+          Type: Api
+          Properties:
+            Path: /posts/create
+            Method: post
+        AddComment:
+          Type: Api
+          Properties:
+            Path: /posts/addComment
+            Method: post
+        GetComments:
+          Type: Api
+          Properties:
+            Path: /posts/getComments
+            Method: post
+  UsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs14.x
+      CodeUri: UsersFunction
+      Description: A simple mobile backend (read/write to DynamoDB).
+      MemorySize: 128
+      Timeout: 100
+      Policies:
+      - AmazonDynamoDBFullAccess
+      - CloudWatchFullAccess
+      - AWSLambdaBasicExecutionRole
+      - AmazonCognitoPowerUser
+      - AmazonS3FullAccess
+      Events:
+        GetUser:
+          Type: Api
+          Properties:
+            Path: /users/{userName}
+            Method: get
+        DeleteUser:
+          Type: Api
+          Properties:
+            Path: /users/delete
+            Method: delete
+        CreateUsers:
+          Type: Api
+          Properties:
+            Path: /users/create
+            Method: post
+        AuthenticateUser:
+          Type: Api
+          Properties:
+            Path: /users/auth
+            Method: post
+        GetProfilePicture:
+          Type: Api
+          Properties:
+            Path: /users/profilePicture/{username}
+            Method: get
+  ApiGatewayPushToCloudWatchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Push logs to CloudWatch logs from API Gateway
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - apigateway.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - Fn::Sub: arn:${AWS::Partition}:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+Outputs:
+  CognitoID:
+    Description: The Cognito UserPool ID
+    Value:
+      Ref: FoodstaPool
+  CognitoClientID:
+    Description: The Cognito UserPool Client ID
+    Value:
+      Ref: FoodstaPoolTokenClient
