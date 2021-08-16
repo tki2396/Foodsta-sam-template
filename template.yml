@@ -25,19 +25,6 @@ Parameters:
 Resources:
   # Each Lambda function is defined by properties:
   # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-
-  # This is a Lambda function config associated with the source code: hello-from-lambda.js
-  helloFromLambdaFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: src/handlers/hello-from-lambda.helloFromLambdaHandler
-      Runtime: nodejs14.x
-      MemorySize: 128
-      Timeout: 100
-      Description: A Lambda function that returns a static string.
-      Policies:
-        # Give Lambda basic execution Permission to the helloFromLambda
-        - AWSLambdaBasicExecutionRole
   FoodstaUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
@@ -156,29 +143,6 @@ Resources:
       ProvisionedThroughput:
           ReadCapacityUnits: 5
           WriteCapacityUnits: 5
-  # PostsApi:
-  #   Type: AWS::Serverless::Api
-  #   MethodSettings: 
-  #       DataTraceEnabled: true
-  #       MetricsEnabled: true
-  #       HttpMethod: '*'
-  #       ResourcePath: !Sub '${VersionParam}/*'
-  #       LoggingLevel: INFO
-  #   AccessLogSetting:
-  #     DestinationArn: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:${ApiAccessLogGroup}'
-  #     Format: '$context.identity.sourceIp $context.authorizer.claims.sub [$context.requestTime] "$context.httpMethod $context.resourcePath $context.protocol" $context.status $context.requestId $context.awsEndpointRequestId $context.xrayTraceId $context.responseLatency $context.integrationLatency "$context.error.message"'
-  #   Properties:
-  #     Name: PostsApi
-  #     StageName: !Ref StageNameParam
-  #     TracingEnabled: true
-  #     Cors:
-  #       AllowOrigin: "'*'"
-  #       AllowMethods: "'OPTIONS,HEAD,GET,PUT,POST,DELETE'"
-  #       AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-  #     Auth:
-  #       Authorizers:
-  #         CognitoAuthorizer:
-  #           UserPoolArn: !GetAtt "FoodstaUserPool.Arn"
   RecipesFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -198,41 +162,26 @@ Resources:
           Properties:
             Path: /recipes/{recipeId}
             Method: get
-            # RestApiId: !Ref RecipesApi
-            # Auth:
-            #   Authorizer: CognitoAuthorizer
         GetRecipes:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
             Path: /recipes/getAll
             Method: get
-            # RestApiId: !Ref RecipesApi
-            # Auth:
-            #   Authorizer: CognitoAuthorizer
         GetRecipeByCuisine:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
             Path: /recipes/cuisine/{cuisine}
             Method: get
-            # RestApiId: !Ref RecipesApi
-            # Auth:
-            #   Authorizer: CognitoAuthorizer
         GetRecipeInformation:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
             Path: /recipes/{recipeId}/information
             Method: get
-            # RestApiId: !Ref RecipesApi
-            # Auth:
-            #   Authorizer: CognitoAuthorizer
         SaveRecipe:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
             Path: /recipes/save
             Method: post
-            # RestApiId: !Ref RecipesApi
-            # Auth:
-            #   Authorizer: CognitoAuthorizer
   PostsFunction:
     Type: 'AWS::Serverless::Function'
     Properties:

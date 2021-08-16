@@ -10,17 +10,6 @@ Parameters:
     Type: String
     Default: prod
 Resources:
-  helloFromLambdaFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: src/handlers/hello-from-lambda.helloFromLambdaHandler
-      Runtime: nodejs14.x
-      MemorySize: 128
-      Timeout: 100
-      Description: A Lambda function that returns a static string.
-      Policies:
-      - AWSLambdaBasicExecutionRole
-      CodeUri: helloFromLambdaFunction
   FoodstaUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
