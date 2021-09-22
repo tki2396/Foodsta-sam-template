@@ -7,6 +7,12 @@ const s3 = new AWS.S3({apiVersion: '2006-03-01'});
 
 AWS.config.update({region: 'us-east-2'});
 
+function uuidv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+}
 
 function uploadToS3(request) {
     console.log(request);
@@ -38,7 +44,7 @@ function createPost(request, imageUrl){
             TableName: 'Foodsta-posts',
             Item: {
               'cognito-username': request.username,
-              'id': request.postId,
+              'id': uuidv4(),
               'caption': request.caption,
               'image': imageUrl,
               'title': request.title
